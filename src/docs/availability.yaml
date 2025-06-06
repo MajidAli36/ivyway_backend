@@ -1,0 +1,378 @@
+tags:
+  - name: Availability
+    description: Tutor and counselor availability management
+
+components:
+  schemas:
+    Availability:
+      type: object
+      required:
+        - dayOfWeek
+        - startTime
+        - endTime
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the availability slot
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        userId:
+          type: string
+          format: uuid
+          description: ID of the provider (tutor/counselor)
+          example: "123e4567-e89b-12d3-a456-426614174111"
+        providerName:
+          type: string
+          description: Name of the provider
+          example: "John Smith"
+        providerRole:
+          type: string
+          description: Role of the provider (tutor/counselor)
+          example: "tutor"
+        dayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: Day of the week (0=Sunday, 6=Saturday)
+          example: 1
+        startTime:
+          type: string
+          format: time
+          description: Start time (HH:MM or HH:MM:SS)
+          example: "09:00"
+        endTime:
+          type: string
+          format: time
+          description: End time (HH:MM or HH:MM:SS)
+          example: "11:00"
+        isAvailable:
+          type: boolean
+          description: Whether this slot is available for booking
+          default: true
+          example: true
+        recurrence:
+          type: string
+          enum: [one-time, weekly, biweekly, monthly]
+          description: How often this slot recurs
+          default: "weekly"
+          example: "weekly"
+        createdAt:
+          type: string
+          format: date-time
+          description: When this record was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: When this record was last updated
+
+    AvailabilityInput:
+      type: object
+      required:
+        - dayOfWeek
+        - startTime
+        - endTime
+      properties:
+        dayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: Day of the week (0=Sunday, 6=Saturday)
+          example: 1
+        startTime:
+          type: string
+          format: time
+          description: Start time (HH:MM)
+          example: "09:00"
+        endTime:
+          type: string
+          format: time
+          description: End time (HH:MM)
+          example: "11:00"
+        isAvailable:
+          type: boolean
+          description: Whether this slot is available for booking
+          default: true
+          example: true
+        recurrence:
+          type: string
+          enum: [one-time, weekly, biweekly, monthly]
+          description: How often this slot recurs
+          default: "weekly"
+          example: "weekly"
+
+    AvailabilityResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        message:
+          type: string
+          example: "Availability slots retrieved successfully"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Availability"
+
+paths:
+  /availability:
+    post:
+      tags:
+        - Availability
+      summary: Create availability slots
+      description: Create one or more availability slots (Tutors and Counselors only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/AvailabilityInput"
+                - type: array
+                  items:
+                    $ref: "#/components/schemas/AvailabilityInput"
+            examples:
+              singleSlot:
+                summary: Single availability slot
+                value:
+                  dayOfWeek: 1
+                  startTime: "09:00"
+                  endTime: "11:00"
+                  isAvailable: true
+                  recurrence: "weekly"
+              multipleSlots:
+                summary: Multiple availability slots
+                value:
+                  - dayOfWeek: 1
+                    startTime: "09:00"
+                    endTime: "11:00"
+                  - dayOfWeek: 3
+                    startTime: "13:00"
+                    endTime: "15:00"
+      responses:
+        201:
+          description: Availability slot(s) created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "2 availability slot(s) created successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Availability"
+        400:
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "Invalid time format"
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - user is not a tutor or counselor
+
+  /availability/my:
+    get:
+      tags:
+        - Availability
+      summary: Get current provider's availability slots
+      description: Returns all availability slots for the authenticated tutor/counselor
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Availability slots retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilityResponse"
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - user is not a tutor or counselor
+
+  /availability/tutor/{tutorId}:
+    get:
+      tags:
+        - Availability
+      summary: Get availability for specific tutor/counselor
+      description: Returns available slots for the specified tutor or counselor
+      parameters:
+        - name: tutorId
+          in: path
+          description: ID of the tutor or counselor
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Provider availability retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Provider availability retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      provider:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                          name:
+                            type: string
+                          role:
+                            type: string
+                      availabilities:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Availability"
+        404:
+          description: Provider not found
+
+  /availability/tutors:
+    get:
+      tags:
+        - Availability
+      summary: Get all providers with their availability
+      description: Returns all tutors and counselors with their availability slots
+      responses:
+        200:
+          description: All providers with availability retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "All providers with availability retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        fullName:
+                          type: string
+                        role:
+                          type: string
+                        availabilities:
+                          type: array
+                          items:
+                            $ref: "#/components/schemas/Availability"
+
+  /availability/{id}:
+    put:
+      tags:
+        - Availability
+      summary: Update an availability slot
+      description: Update an existing availability slot (Tutors and Counselors only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the availability slot
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvailabilityInput"
+      responses:
+        200:
+          description: Availability updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Availability updated successfully"
+                  data:
+                    $ref: "#/components/schemas/Availability"
+        400:
+          description: Invalid input
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - not your availability slot
+        404:
+          description: Availability slot not found
+
+    delete:
+      tags:
+        - Availability
+      summary: Delete an availability slot
+      description: Delete an existing availability slot (Tutors and Counselors only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the availability slot
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Availability deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Availability deleted successfully"
+                  data:
+                    type: null
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - not your availability slot
+        404:
+          description: Availability slot not found

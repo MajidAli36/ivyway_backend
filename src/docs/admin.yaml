@@ -1,0 +1,606 @@
+tags:
+  - name: Admin
+    description: Admin dashboard endpoints
+
+components:
+  schemas:
+    AdminUserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User ID
+        fullName:
+          type: string
+          description: User's full name
+        email:
+          type: string
+          format: email
+          description: User's email address
+        role:
+          type: string
+          enum: [student, tutor, counselor, admin]
+          description: User role
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation date
+        updatedAt:
+          type: string
+          format: date-time
+          description: Account last update date
+        tutorProfile:
+          type: object
+          description: Tutor profile data (only for tutors)
+          nullable: true
+
+    AdminBookingResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Booking ID
+        studentId:
+          type: string
+          format: uuid
+          description: Student ID
+        studentName:
+          type: string
+          description: Student name
+        providerId:
+          type: string
+          format: uuid
+          description: Provider ID
+        providerName:
+          type: string
+          description: Provider name
+        providerRole:
+          type: string
+          enum: [tutor, counselor]
+          description: Provider role
+        startTime:
+          type: string
+          format: date-time
+          description: Session start time
+        endTime:
+          type: string
+          format: date-time
+          description: Session end time
+        status:
+          type: string
+          enum: [pending, confirmed, completed, cancelled]
+          description: Booking status
+        sessionType:
+          type: string
+          enum: [virtual, in-person]
+          description: Session type
+        notes:
+          type: string
+          description: Session notes
+        cancellationReason:
+          type: string
+          description: Reason for cancellation if applicable
+          nullable: true
+        meetingLink:
+          type: string
+          description: Virtual meeting link if applicable
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Booking creation date
+        updatedAt:
+          type: string
+          format: date-time
+          description: Booking last update date
+        student:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            fullName:
+              type: string
+            email:
+              type: string
+              format: email
+        provider:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            fullName:
+              type: string
+            email:
+              type: string
+              format: email
+            role:
+              type: string
+              enum: [tutor, counselor]
+
+    BookingStatistics:
+      type: object
+      properties:
+        totalBookings:
+          type: integer
+          description: Total number of bookings
+        byStatus:
+          type: object
+          properties:
+            pending:
+              type: integer
+              description: Number of pending bookings
+            confirmed:
+              type: integer
+              description: Number of confirmed bookings
+            completed:
+              type: integer
+              description: Number of completed bookings
+            cancelled:
+              type: integer
+              description: Number of cancelled bookings
+        thisMonth:
+          type: integer
+          description: Number of bookings created this month
+        lastMonth:
+          type: integer
+          description: Number of bookings created last month
+        growthRate:
+          type: number
+          format: float
+          description: Month-over-month growth rate (percentage)
+        topTutors:
+          type: array
+          description: Top 5 tutors by booking count
+          items:
+            type: object
+            properties:
+              providerId:
+                type: string
+                format: uuid
+              providerName:
+                type: string
+              bookingCount:
+                type: integer
+
+paths:
+  /admin/users:
+    get:
+      tags:
+        - Admin
+      summary: Get all users
+      description: Retrieve all users with optional role filtering
+      parameters:
+        - name: role
+          in: query
+          description: Filter users by role
+          schema:
+            type: string
+            enum: [student, tutor, counselor, admin]
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Users retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      users:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/AdminUserResponse"
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                          page:
+                            type: integer
+                          limit:
+                            type: integer
+                          totalPages:
+                            type: integer
+
+  /admin/users/{id}:
+    get:
+      tags:
+        - Admin
+      summary: Get user by ID
+      description: Retrieve a specific user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: User retrieved successfully
+                  data:
+                    $ref: "#/components/schemas/AdminUserResponse"
+        404:
+          description: User not found
+
+    put:
+      tags:
+        - Admin
+      summary: Update user
+      description: Update a user's information
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [student, tutor, counselor, admin]
+      responses:
+        200:
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: User updated successfully
+                  data:
+                    $ref: "#/components/schemas/AdminUserResponse"
+        404:
+          description: User not found
+
+    delete:
+      tags:
+        - Admin
+      summary: Delete user
+      description: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: User deleted successfully
+        404:
+          description: User not found
+
+  /admin/sessions:
+    get:
+      tags:
+        - Admin
+      summary: Get all bookings
+      description: Retrieve all bookings with filtering options
+      parameters:
+        - name: status
+          in: query
+          description: Filter by booking status
+          schema:
+            type: string
+            enum: [pending, confirmed, completed, cancelled]
+        - name: startDate
+          in: query
+          description: Filter by start date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: Filter by end date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: studentId
+          in: query
+          description: Filter by student ID
+          schema:
+            type: string
+            format: uuid
+        - name: providerId
+          in: query
+          description: Filter by provider ID
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: Bookings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Bookings retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      bookings:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/AdminBookingResponse"
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                          page:
+                            type: integer
+                          limit:
+                            type: integer
+                          totalPages:
+                            type: integer
+
+  /admin/sessions/{id}:
+    get:
+      tags:
+        - Admin
+      summary: Get booking by ID
+      description: Retrieve a specific booking by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Booking ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Booking retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Booking retrieved successfully
+                  data:
+                    $ref: "#/components/schemas/AdminBookingResponse"
+        404:
+          description: Booking not found
+
+    put:
+      tags:
+        - Admin
+      summary: Update booking
+      description: Update a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Booking ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startTime:
+                  type: string
+                  format: date-time
+                  description: Session start time
+                endTime:
+                  type: string
+                  format: date-time
+                  description: Session end time
+                notes:
+                  type: string
+                  description: Session notes
+                meetingLink:
+                  type: string
+                  description: Virtual meeting link
+      responses:
+        200:
+          description: Booking updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Booking updated successfully
+                  data:
+                    $ref: "#/components/schemas/AdminBookingResponse"
+        404:
+          description: Booking not found
+    
+    delete:
+      tags:
+        - Admin
+      summary: Delete booking
+      description: Delete a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Booking ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Booking deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Booking deleted successfully
+        404:
+          description: Booking not found
+
+  /admin/sessions/{id}/status:
+    put:
+      tags:
+        - Admin
+      summary: Update booking status
+      description: Update the status of a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Booking ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [confirmed, completed, cancelled]
+                  description: New booking status
+                reason:
+                  type: string
+                  description: Reason for cancellation (if status is cancelled)
+      responses:
+        200:
+          description: Booking status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Booking status updated successfully
+                  data:
+                    $ref: "#/components/schemas/AdminBookingResponse"
+        400:
+          description: Invalid status
+        404:
+          description: Booking not found
+
+  /admin/statistics/sessions:
+    get:
+      tags:
+        - Admin
+      summary: Get booking statistics
+      description: Retrieve statistics about bookings
+      responses:
+        200:
+          description: Booking statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Booking statistics retrieved successfully
+                  data:
+                    $ref: "#/components/schemas/BookingStatistics"

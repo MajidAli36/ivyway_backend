@@ -1,0 +1,296 @@
+# tags:
+#   - name: Tutor Dashboard
+#     description: Manage student session requests in tutor dashboard
+
+# components:
+#   schemas:
+#     SessionRequest:
+#       type: object
+#       properties:
+#         id:
+#           type: string
+#           format: uuid
+#           description: The booking ID
+#           example: "123e4567-e89b-12d3-a456-426614174000"
+#         studentId:
+#           type: string
+#           format: uuid
+#           description: ID of the student making the request
+#           example: "123e4567-e89b-12d3-a456-426614174111"
+#         studentName:
+#           type: string
+#           description: Name of the student
+#           example: "Emily Johnson"
+#         startTime:
+#           type: string
+#           format: date-time
+#           description: Start time of the requested session
+#           example: "2023-04-30T16:00:00Z"
+#         endTime:
+#           type: string
+#           format: date-time
+#           description: End time of the requested session
+#           example: "2023-04-30T17:00:00Z"
+#         dayOfWeek:
+#           type: integer
+#           description: Day of the week (0-6, where 0 is Sunday)
+#           example: 1
+#         status:
+#           type: string
+#           enum: [pending, confirmed, cancelled, completed]
+#           description: Status of the request
+#           example: "pending"
+#         sessionType:
+#           type: string
+#           enum: [virtual, in-person]
+#           description: Type of session
+#           example: "virtual"
+#         notes:
+#           type: string
+#           description: Additional notes from the student
+#           example: "I'm struggling with calculus and derivatives"
+#         createdAt:
+#           type: string
+#           format: date-time
+#           description: When the request was created
+#           example: "2023-04-16T10:30:00Z"
+#         student:
+#           type: object
+#           properties:
+#             id:
+#               type: string
+#               format: uuid
+#               example: "123e4567-e89b-12d3-a456-426614174111"
+#             fullName:
+#               type: string
+#               example: "Emily Johnson"
+#             email:
+#               type: string
+#               format: email
+#               example: "emily.johnson@example.com"
+#         availability:
+#           type: object
+#           properties:
+#             id:
+#               type: string
+#               format: uuid
+#               example: "123e4567-e89b-12d3-a456-426614174333"
+#             dayOfWeek:
+#               type: integer
+#               example: 1
+#             startTime:
+#               type: string
+#               example: "14:00"
+#             endTime:
+#               type: string
+#               example: "16:00"
+
+#     RequestStatusUpdate:
+#       type: object
+#       required:
+#         - status
+#       properties:
+#         status:
+#           type: string
+#           enum: [confirmed, cancelled]
+#           description: New status for the request
+#           example: "confirmed"
+#         cancellationReason:
+#           type: string
+#           description: Reason for cancellation (required if status is cancelled)
+#           example: "Schedule conflict"
+
+# paths:
+#   /booking/requests/pending:
+#     get:
+#       tags:
+#         - Tutor Dashboard
+#       summary: Get pending session requests
+#       description: Retrieves all pending session requests for the authenticated tutor
+#       security:
+#         - BearerAuth: []
+#       parameters:
+#         - name: tutorId
+#           in: query
+#           description: ID of the tutor (admin only)
+#           schema:
+#             type: string
+#             format: uuid
+#       responses:
+#         200:
+#           description: List of pending session requests
+#           content:
+#             application/json:
+#               schema:
+#                 type: object
+#                 properties:
+#                   success:
+#                     type: boolean
+#                     example: true
+#                   message:
+#                     type: string
+#                     example: "Pending session requests retrieved successfully"
+#                   data:
+#                     type: array
+#                     items:
+#                       $ref: "#/components/schemas/SessionRequest"
+#         401:
+#           description: Unauthorized
+#         403:
+#           description: Forbidden - User is not a tutor or counselor
+#         500:
+#           description: Server error
+
+#   /booking/requests/all:
+#     get:
+#       tags:
+#         - Tutor Dashboard
+#       summary: Get all session requests
+#       description: Retrieves all session requests for the authenticated tutor with optional status filtering
+#       security:
+#         - BearerAuth: []
+#       parameters:
+#         - name: status
+#           in: query
+#           description: Filter requests by status
+#           schema:
+#             type: string
+#             enum: [pending, confirmed, cancelled, completed]
+#         - name: tutorId
+#           in: query
+#           description: ID of the tutor (admin only)
+#           schema:
+#             type: string
+#             format: uuid
+#       responses:
+#         200:
+#           description: List of session requests
+#           content:
+#             application/json:
+#               schema:
+#                 type: object
+#                 properties:
+#                   success:
+#                     type: boolean
+#                     example: true
+#                   message:
+#                     type: string
+#                     example: "Session requests retrieved successfully"
+#                   data:
+#                     type: array
+#                     items:
+#                       $ref: "#/components/schemas/SessionRequest"
+#         401:
+#           description: Unauthorized
+#         403:
+#           description: Forbidden - User is not a tutor or counselor
+#         500:
+#           description: Server error
+
+#   /booking/requests/{id}:
+#     put:
+#       tags:
+#         - Tutor Dashboard
+#       summary: Update session request status
+#       description: Accept or decline a student session request
+#       security:
+#         - BearerAuth: []
+#       parameters:
+#         - name: id
+#           in: path
+#           description: Request ID (booking ID)
+#           required: true
+#           schema:
+#             type: string
+#             format: uuid
+#       requestBody:
+#         required: true
+#         content:
+#           application/json:
+#             schema:
+#               $ref: "#/components/schemas/RequestStatusUpdate"
+#             examples:
+#               accept:
+#                 summary: Accept request
+#                 value:
+#                   status: confirmed
+#               decline:
+#                 summary: Decline request
+#                 value:
+#                   status: cancelled
+#                   cancellationReason: "Schedule conflict"
+#       responses:
+#         200:
+#           description: Request status updated successfully
+#           content:
+#             application/json:
+#               schema:
+#                 type: object
+#                 properties:
+#                   success:
+#                     type: boolean
+#                     example: true
+#                   message:
+#                     type: string
+#                     example: "Session request confirmed successfully"
+#                   data:
+#                     $ref: "#/components/schemas/SessionRequest"
+#         400:
+#           description: Bad request - Invalid status
+#         401:
+#           description: Unauthorized
+#         403:
+#           description: Forbidden - User is not a tutor or counselor
+#         404:
+#           description: Request not found or already processed
+#         500:
+#           description: Server error
+
+#   /booking/admin/tutor/{tutorId}/requests:
+#     get:
+#       tags:
+#         - Tutor Dashboard
+#       summary: Admin - Get requests for specific tutor
+#       description: Admin endpoint to view session requests for any tutor
+#       security:
+#         - BearerAuth: []
+#       parameters:
+#         - name: tutorId
+#           in: path
+#           description: ID of the tutor
+#           required: true
+#           schema:
+#             type: string
+#             format: uuid
+#         - name: status
+#           in: query
+#           description: Filter requests by status
+#           schema:
+#             type: string
+#             enum: [pending, confirmed, cancelled, completed]
+#       responses:
+#         200:
+#           description: List of session requests for the specified tutor
+#           content:
+#             application/json:
+#               schema:
+#                 type: object
+#                 properties:
+#                   success:
+#                     type: boolean
+#                     example: true
+#                   message:
+#                     type: string
+#                     example: "Session requests for tutor John Doe retrieved successfully"
+#                   data:
+#                     type: array
+#                     items:
+#                       $ref: "#/components/schemas/SessionRequest"
+#         401:
+#           description: Unauthorized
+#         403:
+#           description: Forbidden - User is not an admin
+#         404:
+#           description: Tutor not found
+#         500:
+#           description: Server error

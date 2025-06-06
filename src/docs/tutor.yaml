@@ -1,0 +1,495 @@
+tags:
+  - name: Tutors
+    description: Tutor management and search
+
+components:
+  schemas:
+    # Update the TutorProfile schema
+    TutorProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Firebase User ID
+          example: "y9ByT4JZAEQPiH31JjE0UmOMDHi2"
+        userId:
+          type: string
+          description: Firebase User ID
+          example: "y9ByT4JZAEQPiH31JjE0UmOMDHi2"
+        # Personal Info
+        location:
+          type: string
+          description: Tutor's location
+          example: "New York, NY"
+        phoneNumber:
+          type: string
+          description: Tutor's phone number
+          example: "+1 (555) 123-4567"
+        bio:
+          type: string
+          description: Tutor's biography
+          example: "Experienced math tutor specializing in calculus and algebra"
+        profileImage:
+          type: string
+          description: Path to tutor's profile image
+          example: "uploads/profile-images/abc123.jpg"
+
+        # Academic Info
+        education:
+          type: string
+          description: Tutor's educational institution
+          example: "Harvard University"
+        degree:
+          type: string
+          description: Tutor's degree
+          example: "Master of Science in Mathematics"
+        certifications:
+          type: array
+          items:
+            type: string
+          description: Tutor's certifications
+          example: ["Certified Math Teacher", "Advanced Calculus Certification"]
+        graduationYear:
+          type: integer
+          description: Year of graduation
+          example: 2018
+
+        # Tutor Info
+        subjects:
+          type: array
+          items:
+            type: string
+          description: Subjects the tutor teaches
+          example: ["Mathematics", "Physics"]
+        experience:
+          type: integer
+          description: Years of teaching experience
+          example: 5
+        createdAt:
+          type: string
+          format: date-time
+          description: When this profile was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: When this profile was last updated
+
+    # Add the missing TutorWithProfile schema
+    TutorWithProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Firebase User ID
+          example: "y9ByT4JZAEQPiH31JjE0UmOMDHi2"
+        fullName:
+          type: string
+          description: Full name of the tutor
+          example: "John Smith"
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: "john.smith@example.com"
+        role:
+          type: string
+          enum: ["tutor"]
+          description: User role
+          example: "tutor"
+        tutorProfile:
+          $ref: "#/components/schemas/TutorProfile"
+
+    TutorProfileInput:
+      type: object
+      required:
+        - subjects
+      properties:
+        # Personal Info
+        location:
+          type: string
+          description: Tutor's location
+          example: "New York, NY"
+        phoneNumber:
+          type: string
+          description: Tutor's phone number
+          example: "+1 (555) 123-4567"
+        bio:
+          type: string
+          description: Tutor's biography
+          example: "Experienced math tutor specializing in calculus and algebra"
+
+        # Academic Info
+        education:
+          type: string
+          description: Tutor's educational institution
+          example: "Harvard University"
+        degree:
+          type: string
+          description: Tutor's degree
+          example: "Master of Science in Mathematics"
+        certifications:
+          type: array
+          items:
+            type: string
+          description: Tutor's certifications
+          example: ["Certified Math Teacher", "Advanced Calculus Certification"]
+        graduationYear:
+          type: integer
+          description: Year of graduation
+          example: 2018
+
+        # Tutor Info
+        subjects:
+          type: array
+          items:
+            type: string
+          description: Subjects the tutor teaches
+          example: ["Mathematics", "Physics"]
+        experience:
+          type: integer
+          description: Years of teaching experience
+          example: 5
+
+    TutorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Tutor retrieved successfully"
+        data:
+          $ref: "#/components/schemas/TutorWithProfile"
+
+    TutorsListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Tutors retrieved successfully"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TutorWithProfile"
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+              example: 50
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+            totalPages:
+              type: integer
+              example: 5
+            hasNextPage:
+              type: boolean
+              example: true
+            hasPrevPage:
+              type: boolean
+              example: false
+
+paths:
+  /tutors:
+    get:
+      tags:
+        - Tutors
+      summary: Get all tutors
+      description: Returns a paginated list of all tutors with optional filtering
+      parameters:
+        - name: subject
+          in: query
+          description: Filter tutors by subject
+          schema:
+            type: string
+        - name: minExperience
+          in: query
+          description: Filter tutors by minimum years of experience
+          schema:
+            type: integer
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 12
+      responses:
+        200:
+          description: Tutors retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TutorsListResponse"
+
+  /tutors/{id}:
+    get:
+      tags:
+        - Tutors
+      summary: Get tutor by ID
+      description: Returns a specific tutor by ID
+      parameters:
+        - name: id
+          in: path
+          description: ID of the tutor
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Tutor retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TutorResponse"
+        404:
+          description: Tutor not found
+
+  /tutors/subject/{subject}:
+    get:
+      tags:
+        - Tutors
+      summary: Get tutors by subject
+      description: Returns tutors who teach a specific subject
+      parameters:
+        - name: subject
+          in: path
+          description: Subject name
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Tutors retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Tutors for Mathematics retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TutorWithProfile"
+        400:
+          description: Subject is required
+
+  /tutors/profile/me:
+    get:
+      tags:
+        - Tutors
+      summary: Get current tutor's profile
+      description: Returns the profile of the authenticated tutor
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Tutor profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TutorResponse"
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - user is not a tutor
+        404:
+          description: Tutor profile not found
+
+  /tutors/profile:
+    put:
+      tags:
+        - Tutors
+      summary: Create or update tutor profile
+      description: Creates or updates the profile of the authenticated tutor
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - subjects
+              properties:
+                # Personal Info
+                location:
+                  type: string
+                  description: Tutor's location
+                phoneNumber:
+                  type: string
+                  description: Tutor's phone number
+                bio:
+                  type: string
+                  description: Tutor's biography
+                profileImage:
+                  type: string
+                  format: binary
+                  description: Tutor's profile image
+
+                # Academic Info
+                education:
+                  type: string
+                  description: Tutor's educational institution
+                degree:
+                  type: string
+                  description: Tutor's degree
+                certifications:
+                  type: array
+                  items:
+                    type: string
+                  description: Tutor's certifications
+                graduationYear:
+                  type: integer
+                  description: Year of graduation
+
+                # Tutor Info
+                subjects:
+                  type: array
+                  items:
+                    type: string
+                  description: Subjects the tutor teaches
+                experience:
+                  type: integer
+                  description: Years of teaching experience
+      responses:
+        200:
+          description: Tutor profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TutorResponse"
+        400:
+          description: Invalid input
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - user is not a tutor
+
+  /tutors/{id}/profile:
+    put:
+      tags:
+        - Tutors
+      summary: Update tutor profile (Admin only)
+      description: Updates a specific tutor's profile (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Firebase User ID of the tutor
+          required: true
+          schema:
+            type: string
+            example: "y9ByT4JZAEQPiH31JjE0UmOMDHi2"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                location:
+                  type: string
+                  example: "New York"
+                phoneNumber:
+                  type: string
+                  example: "+1234567890"
+                bio:
+                  type: string
+                  example: "Experienced tutor"
+                education:
+                  type: string
+                  example: "Masters in Education"
+                degree:
+                  type: string
+                  example: "M.Ed"
+                certifications:
+                  type: array
+                  items:
+                    type: string
+                  example: ["Teaching Certificate"]
+                graduationYear:
+                  type: integer
+                  example: 2020
+                subjects:
+                  type: array
+                  items:
+                    type: string
+                  example: ["Mathematics", "Physics"]
+                experience:
+                  type: integer
+                  example: 5
+      responses:
+        200:
+          description: Tutor profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TutorResponse"
+        400:
+          description: Invalid input
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - user is not an admin
+        404:
+          description: Tutor not found
+
+    delete:
+      tags:
+        - Tutors
+      summary: Delete tutor profile (Admin only)
+      description: Deletes a specific tutor's profile (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Firebase User ID of the tutor
+          required: true
+          schema:
+            type: string
+            example: "y9ByT4JZAEQPiH31JjE0UmOMDHi2"
+      responses:
+        200:
+          description: Tutor profile deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Tutor profile deleted successfully"
+                  data:
+                    type: null
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - user is not an admin
+        404:
+          description: Tutor or profile not found

@@ -1,0 +1,283 @@
+tags:
+  - name: Counselor Profiles
+    description: Counselor profile management endpoints
+
+components:
+  schemas:
+    CounselorProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Profile ID
+        userId:
+          type: string
+          format: uuid
+          description: User ID of the counselor
+        bio:
+          type: string
+          description: Counselor's biography
+        education:
+          type: string
+          description: Counselor's educational background
+        specialization:
+          type: string
+          description: Counselor's area of specialization
+        experience:
+          type: integer
+          description: Years of experience
+        profileImage:
+          type: string
+          description: Profile image filename
+        profileImageUrl:
+          type: string
+          description: Full URL to profile image
+        certifications:
+          type: array
+          items:
+            type: string
+          description: List of certifications
+        languages:
+          type: array
+          items:
+            type: string
+          description: Languages spoken
+        hourlyRate:
+          type: number
+          format: float
+          description: Hourly rate for counseling sessions
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            fullName:
+              type: string
+            email:
+              type: string
+
+paths:
+  /counselor-profiles:  # Remove the /api prefix
+    get:
+      tags:
+        - Counselor Profiles
+      summary: Get all counselor profiles
+      description: Retrieve a list of all counselor profiles with pagination
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Number of items per page
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Counselor profiles retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      profiles:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/CounselorProfile"
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                          page:
+                            type: integer
+                          limit:
+                            type: integer
+                          totalPages:
+                            type: integer
+
+  /counselor-profiles/user/{userId}:  # Remove the /api prefix
+    get:
+      tags:
+        - Counselor Profiles
+      summary: Get counselor profile by user ID
+      description: Retrieve a specific counselor's profile by their user ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID of the counselor
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Counselor profile retrieved successfully
+                  data:
+                    $ref: "#/components/schemas/CounselorProfile"
+        404:
+          description: Profile not found
+
+  /counselor-profiles/me:  # Remove the /api prefix
+    get:
+      tags:
+        - Counselor Profiles
+      summary: Get my counselor profile
+      description: Retrieve the authenticated counselor's profile
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Counselor profile retrieved successfully
+                  data:
+                    $ref: "#/components/schemas/CounselorProfile"
+        401:
+          description: Unauthorized
+        404:
+          description: Profile not found
+
+    put:
+      tags:
+        - Counselor Profiles
+      summary: Update my counselor profile
+      description: Update the authenticated counselor's profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                bio:
+                  type: string
+                  description: Counselor's biography
+                education:
+                  type: string
+                  description: Counselor's educational background
+                specialization:
+                  type: string
+                  description: Counselor's area of specialization
+                experience:
+                  type: integer
+                  description: Years of experience
+                profileImage:
+                  type: string
+                  format: binary
+                  description: Profile image file
+                certifications:
+                  type: array
+                  items:
+                    type: string
+                  description: List of certifications
+                languages:
+                  type: array
+                  items:
+                    type: string
+                  description: Languages spoken
+                hourlyRate:
+                  type: number
+                  format: float
+                  description: Hourly rate for counseling sessions
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Counselor profile updated successfully
+                  data:
+                    $ref: "#/components/schemas/CounselorProfile"
+        401:
+          description: Unauthorized
+        400:
+          description: Bad request
+
+  /counselor-profiles/{userId}:  # Remove the /api prefix
+    delete:
+      tags:
+        - Counselor Profiles
+      summary: Delete counselor profile
+      description: Delete a counselor profile (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID of the counselor
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Counselor profile deleted successfully
+                  data:
+                    type: null
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        404:
+          description: Profile not found

@@ -1,0 +1,398 @@
+tags:
+  - name: Bookings
+    description: Session booking management
+
+components:
+  schemas:
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the booking
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        studentId:
+          type: string
+          format: uuid
+          description: ID of the student
+          example: "123e4567-e89b-12d3-a456-426614174111"
+        providerId:
+          type: string
+          format: uuid
+          description: ID of the provider (tutor/counselor)
+          example: "123e4567-e89b-12d3-a456-426614174222"
+        availabilityId:
+          type: string
+          format: uuid
+          description: ID of the availability slot
+          example: "123e4567-e89b-12d3-a456-426614174333"
+        startTime:
+          type: string
+          format: date-time
+          description: Start time of the session
+          example: "2023-04-30T09:00:00Z"
+        endTime:
+          type: string
+          format: date-time
+          description: End time of the session
+          example: "2023-04-30T11:00:00Z"
+        dayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: Day of the week (0=Sunday, 6=Saturday)
+          example: 1
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, completed]
+          description: Current status of the booking
+          example: "pending"
+        cancellationReason:
+          type: string
+          nullable: true
+          description: Reason for cancellation if cancelled
+        sessionType:
+          type: string
+          enum: [virtual, in-person]
+          description: Type of session
+          example: "virtual"
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes for the session
+          example: "I need help with calculus problems"
+        studentName:
+          type: string
+          description: Name of the student
+          example: "Jane Doe"
+        providerName:
+          type: string
+          description: Name of the provider
+          example: "John Smith"
+        providerRole:
+          type: string
+          description: Role of the provider
+          example: "tutor"
+        createdAt:
+          type: string
+          format: date-time
+          description: When this booking was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: When this booking was last updated
+
+    BookingInput:
+      type: object
+      required:
+        - providerId
+        - startTime
+        - endTime
+      properties:
+        providerId:
+          type: string
+          format: uuid
+          description: ID of the provider (tutor/counselor)
+          example: "123e4567-e89b-12d3-a456-426614174222"
+        availabilityId:
+          type: string
+          format: uuid
+          description: ID of the availability slot
+          example: "123e4567-e89b-12d3-a456-426614174333"
+        startTime:
+          type: string
+          format: date-time
+          description: Start time of the session
+          example: "2023-04-30T09:00:00Z"
+        endTime:
+          type: string
+          format: date-time
+          description: End time of the session
+          example: "2023-04-30T11:00:00Z"
+        sessionType:
+          type: string
+          enum: [virtual, in-person]
+          description: Type of session
+          default: "virtual"
+          example: "virtual"
+        notes:
+          type: string
+          description: Additional notes for the session
+          example: "I need help with calculus problems"
+
+    BookingResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        message:
+          type: string
+          example: "Booking created successfully"
+        data:
+          $ref: "#/components/schemas/Booking"
+
+paths:
+  /bookings:
+    post:
+      tags:
+        - Bookings
+      summary: Create a new booking
+      description: Book a session with a tutor or counselor (Students only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingInput"
+      responses:
+        201:
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingResponse"
+        400:
+          description: Invalid input or provider not available
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - user is not a student
+        404:
+          description: Provider or availability slot not found
+
+  /bookings/my:
+    get:
+      tags:
+        - Bookings
+      summary: Get student's bookings
+      description: Returns all bookings for the authenticated student
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by booking status
+          schema:
+            type: string
+            enum: [pending, confirmed, cancelled, completed]
+        - name: startDate
+          in: query
+          description: Filter bookings after this date
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: Filter bookings before this date
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: Bookings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Bookings retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Booking"
+        401:
+          description: Unauthorized
+
+  /bookings/provider:
+    get:
+      tags:
+        - Bookings
+      summary: Get provider's bookings
+      description: Returns all bookings for the authenticated tutor/counselor
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by booking status
+          schema:
+            type: string
+            enum: [pending, confirmed, cancelled, completed]
+        - name: startDate
+          in: query
+          description: Filter bookings after this date
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: Filter bookings before this date
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: Bookings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Bookings retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Booking"
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - user is not a tutor or counselor
+
+  /bookings/{id}:
+    get:
+      tags:
+        - Bookings
+      summary: Get booking by ID
+      description: Returns details for a specific booking
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the booking
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Booking retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingResponse"
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - not your booking
+        404:
+          description: Booking not found
+
+    delete:
+      tags:
+        - Bookings
+      summary: Cancel a booking
+      description: Cancel an existing booking (Students may only cancel 24+ hours in advance)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the booking
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cancellationReason:
+                  type: string
+                  description: Reason for cancellation
+                  example: "Schedule conflict"
+      responses:
+        200:
+          description: Booking cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Booking cancelled successfully"
+                  data:
+                    $ref: "#/components/schemas/Booking"
+        400:
+          description: Cannot cancel - too close to session time or already cancelled/completed
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - not your booking
+        404:
+          description: Booking not found
+
+  /bookings/{id}/status:
+    patch:
+      tags:
+        - Bookings
+      summary: Update booking status
+      description: Update the status of a booking (Tutors, Counselors, and Admins only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the booking
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [confirmed, completed]
+                  description: New status for the booking
+                  example: "confirmed"
+      responses:
+        200:
+          description: Booking status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Booking marked as confirmed"
+                  data:
+                    $ref: "#/components/schemas/Booking"
+        400:
+          description: Invalid status or cannot update cancelled booking
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden - not your booking or not a provider/admin
+        404:
+          description: Booking not found

@@ -1,0 +1,157 @@
+components:
+  schemas:
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the notification
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user this notification is for
+        type:
+          type: string
+          enum: [booking_created, booking_confirmed, booking_cancelled, message_received, system_notification]
+          description: Type of notification
+        title:
+          type: string
+          description: Notification title
+        content:
+          type: string
+          description: Notification content
+        isRead:
+          type: boolean
+          description: Whether the notification has been read
+          default: false
+        metadata:
+          type: object
+          description: Additional data related to the notification
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+tags:
+  - name: Notifications
+    description: Notification management endpoints
+
+paths:
+  /notifications:
+    get:
+      summary: Get current user's notifications
+      tags:
+        - Notifications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of notifications to return
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          description: Number of notifications to skip
+          schema:
+            type: integer
+            default: 0
+        - name: unreadOnly
+          in: query
+          description: Only return unread notifications
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      notifications:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Notification"
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                          limit:
+                            type: integer
+                          offset:
+                            type: integer
+                  message:
+                    type: string
+
+  /notifications/{notificationId}/read:
+    patch:
+      summary: Mark a notification as read
+      tags:
+        - Notifications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          description: ID of the notification
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Notification marked as read
+        404:
+          description: Notification not found
+
+  /notifications/read-all:
+    patch:
+      summary: Mark all notifications as read
+      tags:
+        - Notifications
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        description: Number of notifications marked as read
+                  message:
+                    type: string
+                    example: 5 notifications marked as read

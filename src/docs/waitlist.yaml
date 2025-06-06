@@ -1,0 +1,85 @@
+paths:
+  /waitlist:
+    post:
+      tags:
+        - Waitlist
+      summary: Add user to waitlist
+      description: Public endpoint to allow users to join the waitlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fullName
+                - email
+                - phoneNumber
+              properties:
+                fullName:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                phoneNumber:
+                  type: string
+                  example: "+1234567890"
+                message:
+                  type: string
+                  example: "Interested in tutoring services"
+      responses:
+        201:
+          description: Successfully added to waitlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                  message:
+                    type: string
+        400:
+          description: Bad request - missing required fields
+
+    get:
+      tags:
+        - Waitlist
+      summary: Get all waitlist users
+      description: Admin only endpoint to view all users in waitlist
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: List of all waitlist users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fullName:
+                          type: string
+                        email:
+                          type: string
+                        phoneNumber:
+                          type: string
+                        message:
+                          type: string
+                        createdAt:
+                          type: string
+                          format: date-time
+                  message:
+                    type: string
+        401:
+          description: Unauthorized - Authentication required

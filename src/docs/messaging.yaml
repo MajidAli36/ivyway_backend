@@ -1,0 +1,465 @@
+components:
+  schemas:
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the conversation
+        participantIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Array of user IDs participating in this conversation
+        type:
+          type: string
+          enum: [direct, group]
+          description: Type of conversation
+        title:
+          type: string
+          description: Title for group conversations
+        lastMessageAt:
+          type: string
+          format: date-time
+          description: Timestamp of the last message
+        metadata:
+          type: object
+          description: Additional metadata like related booking ID, etc.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the message
+        conversationId:
+          type: string
+          format: uuid
+          description: ID of the conversation this message belongs to
+        senderId:
+          type: string
+          format: uuid
+          description: ID of the user who sent this message
+        content:
+          type: string
+          description: Content of the message
+        contentType:
+          type: string
+          enum: [text, image, file]
+          description: Type of content
+        metadata:
+          type: object
+          description: Additional metadata like file URLs, etc.
+        readBy:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Array of user IDs who have read this message
+        isDeleted:
+          type: boolean
+          description: Whether the message has been deleted
+          default: false
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ConversationRequest:
+      type: object
+      required:
+        - participantId
+      properties:
+        participantId:
+          type: string
+          format: uuid
+          description: ID of the user to start a conversation with
+    BookingConversationRequest:
+      type: object
+      required:
+        - bookingId
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+          description: ID of the booking to create a conversation for
+    MessageRequest:
+      type: object
+      required:
+        - conversationId
+        - content
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+          description: ID of the conversation to send the message to
+        content:
+          type: string
+          description: Content of the message
+        contentType:
+          type: string
+          enum: [text, image, file]
+          default: text
+          description: Type of content
+        metadata:
+          type: object
+          description: Additional metadata
+    TypingIndicatorRequest:
+      type: object
+      required:
+        - conversationId
+        - isTyping
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+          description: ID of the conversation
+        isTyping:
+          type: boolean
+          description: Whether the user is typing or not
+
+tags:
+  - name: Messaging
+    description: Messaging API endpoints
+
+paths:
+  /messaging/conversations:
+    get:
+      summary: Get all conversations for the current user
+      tags:
+        - Messaging
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Conversation"
+                  message:
+                    type: string
+                    example: Conversations retrieved successfully
+        401:
+          description: Unauthorized
+        500:
+          description: Server error
+    post:
+      summary: Get or create a conversation with another user
+      tags:
+        - Messaging
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConversationRequest"
+      responses:
+        200:
+          description: Conversation retrieved or created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/Conversation"
+                  message:
+                    type: string
+                    example: Conversation retrieved successfully
+        400:
+          description: Bad request
+        401:
+          description: Unauthorized
+        404:
+          description: Participant not found
+        500:
+          description: Server error
+
+  /messaging/conversations/booking:
+    post:
+      summary: Create a conversation for a booking
+      tags:
+        - Messaging
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingConversationRequest"
+      responses:
+        201:
+          description: Booking conversation created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/Conversation"
+                  message:
+                    type: string
+                    example: Booking conversation created successfully
+        400:
+          description: Bad request
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        404:
+          description: Booking not found
+        500:
+          description: Server error
+
+  /messaging/conversations/{conversationId}/messages:
+    get:
+      summary: Get messages for a conversation
+      tags:
+        - Messaging
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the conversation
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+          description: Number of messages per page
+      responses:
+        200:
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      messages:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Message"
+                      pagination:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            example: 1
+                          limit:
+                            type: integer
+                            example: 50
+                          totalCount:
+                            type: integer
+                            example: 120
+                          totalPages:
+                            type: integer
+                            example: 3
+                  message:
+                    type: string
+                    example: Messages retrieved successfully
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        404:
+          description: Conversation not found
+        500:
+          description: Server error
+
+  /messaging/messages:
+    post:
+      summary: Send a message
+      tags:
+        - Messaging
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageRequest"
+      responses:
+        201:
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/Message"
+                  message:
+                    type: string
+                    example: Message sent successfully
+        400:
+          description: Bad request
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        404:
+          description: Conversation not found
+        500:
+          description: Server error
+          
+  /messaging/messages/{messageId}:
+    delete:
+      summary: Delete a message
+      tags:
+        - Messaging
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: messageId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the message to delete
+      responses:
+        200:
+          description: Message deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Message deleted successfully
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        404:
+          description: Message not found
+        500:
+          description: Server error
+          
+  /messaging/typing-indicator:
+    post:
+      summary: Send typing indicator
+      tags:
+        - Messaging
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TypingIndicatorRequest"
+      responses:
+        200:
+          description: Typing indicator sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Typing indicator sent successfully
+        400:
+          description: Bad request
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        404:
+          description: Conversation not found
+        500:
+          description: Server error
+
+/messaging/conversations/{conversationId}:
+    delete:
+      summary: Delete a conversation
+      tags:
+        - Messaging
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the conversation to delete
+      responses:
+        200:
+          description: Conversation deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Conversation deleted successfully
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        404:
+          description: Conversation not found
+        500:
+          description: Server error
