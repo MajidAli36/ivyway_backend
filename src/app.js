@@ -28,6 +28,8 @@ const allowedOrigins = [
   "http://test-ivy-front-env.eba-gvau2638.us-east-1.elasticbeanstalk.com",
   "https://main.d6hhbvtaerp6m.amplifyapp.com",
   "http://localhost:3000",
+  "https://main.d1eeyci2jtde9.amplifyapp.com",
+  "https://main.d1eeyci2jtde9.amplifyapp.com/",
 ];
 
 app.use(
